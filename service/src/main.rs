@@ -2,7 +2,6 @@ mod handlers;
 mod router;
 mod reply;
 mod state;
-mod error;
 
 use self::router::router;
 use self::state::State;

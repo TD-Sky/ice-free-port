@@ -1,99 +1,97 @@
-use crate::error::MyError;
-use poem::{
-    http::{header::CONTENT_TYPE, StatusCode},
-    web::IntoResponse,
-    Response,
-};
+use poem::{http::StatusCode, IntoResponse, Response, ResponseBuilder};
 use serde::Serialize;
+use std::marker::PhantomData;
+use serde_with::skip_serializing_none;
 
-#[derive(Serialize, Default)]
-pub struct Reply<T = ()> {
+#[skip_serializing_none]
+#[derive(Serialize)]
+struct Body<T = ()> {
     code: u16,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     msg: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<T>,
 }
 
-pub struct ReplyBuilder<T = ()> {
-    code: u16,
-    msg: Option<String>,
-    data: Option<T>,
+pub struct Reply<T = ()> {
+    response: Response,
+    marker: PhantomData<T>,
+}
+
+pub struct ReplyBuilder<T> {
+    body: Body<T>,
+    response: ResponseBuilder,
+}
+
+// 只提供 T = () 时的默认值
+impl Default for Reply {
+    fn default() -> Self {
+        Self::builder().code(0).finish()
+    }
 }
 
 impl<T: Serialize + Send> IntoResponse for Reply<T> {
     fn into_response(self) -> Response {
-        let data = match serde_json::to_vec(&self) {
-            Ok(data) => data,
-            Err(err) => {
-                return Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(err.to_string())
-            }
-        };
-
-        Response::builder()
-            .header(CONTENT_TYPE, "application/json; charset=utf-8")
-            .body(data)
-    }
-}
-
-impl<T: Serialize> From<Result<T, MyError>> for Reply<T> {
-    fn from(res: Result<T, MyError>) -> Self {
-        match res {
-            Ok(data) => Reply {
-                code: 0,
-                msg: None,
-                data: Some(data),
-            },
-
-            Err(err) => match err {
-                MyError::WarehouseAlreadyExist(name) => Reply {
-                    code: 1,
-                    msg: Some(name),
-                    data: None,
-                },
-            },
-        }
+        self.response
     }
 }
 
 impl<T> Reply<T> {
     pub fn builder() -> ReplyBuilder<T> {
         ReplyBuilder {
-            code: 0,
-            msg: None,
-            data: None,
+            body: Body {
+                code: 0,
+                msg: None,
+                data: None,
+            },
+
+            response: Response::builder().content_type("application/json; charset=utf-8"),
         }
     }
 }
 
-impl<T> ReplyBuilder<T> {
+impl<T: Send + Serialize> ReplyBuilder<T> {
     pub fn code(mut self, code: u16) -> Self {
-        self.code = code;
+        self.body.code = code;
 
         self
     }
 
     pub fn msg(mut self, msg: String) -> Self {
-        self.msg = Some(msg);
+        self.body.msg = Some(msg);
 
         self
     }
 
     pub fn data(mut self, data: T) -> Self {
-        self.data = Some(data);
+        self.body.data = Some(data);
 
         self
     }
 
-    pub fn build(self) -> Reply<T> {
+    pub fn status(mut self, status: StatusCode) -> Self {
+        self.response = self.response.status(status);
+
+        self
+    }
+
+    pub fn finish(self) -> Reply<T> {
         Reply {
-            code: self.code,
-            msg: self.msg,
-            data: self.data,
+            response: match serde_json::to_vec(&self.body) {
+                Ok(bs) => self.response.body(bs),
+
+                Err(e) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .content_type("application/json; charset=utf-8")
+                    .body(
+                        serde_json::to_vec(&Body {
+                            code: 1,
+                            msg: Some(e.to_string()),
+                            data: None as Option<T>,
+                        })
+                        .unwrap(),
+                    ),
+            },
+
+            marker: PhantomData,
         }
     }
 }

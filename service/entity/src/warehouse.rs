@@ -2,12 +2,15 @@
 
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 
+#[serde_as]
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "warehouse")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     #[serde(default)]
+    #[serde_as(as = "DisplayFromStr")]
     pub id: i64,
     #[sea_orm(column_type = "Text", unique)]
     pub house_name: String,

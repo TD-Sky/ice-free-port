@@ -1,9 +1,9 @@
 use crate::{reply::Reply, state::State};
 use entity::warehouse::{self, Entity as Warehouse};
 use poem::{
+    handler,
     http::StatusCode,
     web::{Data, Json, Path},
-    {handler, IntoResponse, Response},
 };
 use sea_orm::{ActiveModelTrait, EntityTrait, Set, Unchanged};
 
@@ -14,28 +14,27 @@ pub async fn batch(Data(State { db, .. }): Data<&State>) -> Reply<Vec<warehouse:
         .await
         .expect("[Error] handlers::warehouse::batch");
 
-    Ok(houses).into()
+    Reply::builder().data(houses).finish()
 }
 
 #[handler]
 pub async fn insert(
     Data(State { db, id_gen }): Data<&State>,
     Json(house): Json<warehouse::Model>,
-) -> Response {
+) -> Reply {
     let house_name = house.house_name.clone();
 
     let mut act_model: warehouse::ActiveModel = house.into();
     act_model.id = Set(id_gen.lock().unwrap().get_id());
 
     match Warehouse::insert(act_model).exec(db).await {
-        Ok(_) => Reply::<()>::default().into_response(),
+        Ok(_) => Reply::default(),
 
-        Err(_) => Reply::<()>::builder()
-            .code(1)
+        Err(_) => Reply::builder()
+            .code(2)
             .msg(house_name)
-            .build()
-            .with_status(StatusCode::CONFLICT)
-            .into_response(),
+            .status(StatusCode::CONFLICT)
+            .finish(),
     }
 }
 
@@ -43,7 +42,7 @@ pub async fn insert(
 pub async fn update(
     Data(State { db, .. }): Data<&State>,
     Json(house): Json<warehouse::Model>,
-) -> Response {
+) -> Reply {
     let house_name = house.house_name.clone();
 
     // into 只会得到所有字段皆 Unchanged
@@ -55,14 +54,13 @@ pub async fn update(
     };
 
     match act_model.update(db).await {
-        Ok(_) => Reply::<()>::default().into_response(),
+        Ok(_) => Reply::default(),
 
-        Err(_) => Reply::<()>::builder()
-            .code(1)
+        Err(_) => Reply::builder()
+            .code(2)
             .msg(house_name)
-            .build()
-            .with_status(StatusCode::CONFLICT)
-            .into_response(),
+            .status(StatusCode::CONFLICT)
+            .finish(),
     }
 }
 

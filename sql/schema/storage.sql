@@ -12,7 +12,7 @@ create table storage
 (
     id int8 primary key,                        -- 雪花ID
     warehouse_id int8 not NULL,                 -- 仓库ID
-    stock_date date not NULL,                   -- 入库日期
+    store_date date not NULL,                   -- 入库日期
     license_plate_number char(7) not NULL,      -- 车牌号
     quantity int4 not NULL,                     -- 件数
     ton float8 not NULL,                        -- 吨数
