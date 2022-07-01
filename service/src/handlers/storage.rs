@@ -1,12 +1,11 @@
-use entity::storage::{self, Entity as Storage};
+use entity::{prelude::Storage, storage};
 
-use super::UNIT_WEIGHT;
 use crate::{reply::Reply, state::State};
 use poem::{
     handler,
     web::{Data, Json, Path},
 };
-use sea_orm::{ActiveModelTrait, ActiveValue::NotSet, EntityTrait, QueryOrder, Set, Unchanged};
+use sea_orm::{ActiveModelTrait, EntityTrait, IntoActiveModel, QueryOrder, Set};
 
 #[handler]
 pub async fn batch(Data(State { db, .. }): Data<&State>) -> Reply<Vec<storage::Model>> {
@@ -23,14 +22,10 @@ pub async fn batch(Data(State { db, .. }): Data<&State>) -> Reply<Vec<storage::M
 #[handler]
 pub async fn insert(
     Data(State { db, id_gen }): Data<&State>,
-    Json(stock): Json<storage::Model>,
+    Json(stock): Json<storage::InsertModel>,
 ) -> Reply {
-    let ton = UNIT_WEIGHT * (stock.quantity as f64);
-
-    let mut act_model: storage::ActiveModel = stock.into();
+    let mut act_model = stock.into_active_model();
     act_model.id = Set(id_gen.lock().unwrap().get_id());
-    act_model.ton = Set(ton);
-    act_model.duration = NotSet;
 
     Storage::insert(act_model)
         .exec(db)
@@ -43,17 +38,9 @@ pub async fn insert(
 #[handler]
 pub async fn update(
     Data(State { db, .. }): Data<&State>,
-    Json(stock): Json<storage::Model>,
+    Json(stock): Json<storage::UpdateModel>,
 ) -> Reply {
-    let mut act_model = storage::ActiveModel {
-        id: Unchanged(stock.id),
-        warehouse_id: NotSet,
-        store_date: Set(stock.store_date),
-        license_plate_number: Set(stock.license_plate_number),
-        quantity: Set(stock.quantity),
-        ton: Set(UNIT_WEIGHT * (stock.quantity as f64)),
-        duration: NotSet,
-    };
+    let mut act_model = stock.into_active_model();
 
     act_model
         .update(db)
