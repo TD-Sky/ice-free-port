@@ -7,3 +7,5 @@ pub mod shipping_item;
 pub mod shipping_order;
 pub mod storage;
 pub mod warehouse;
+
+const UNIT_WEIGHT: f64 = 0.05;

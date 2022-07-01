@@ -1,6 +1,7 @@
 mod handlers;
-mod router;
+mod models;
 mod reply;
+mod router;
 mod state;
 
 use self::router::router;
