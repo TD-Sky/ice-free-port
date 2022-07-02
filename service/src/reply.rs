@@ -1,7 +1,8 @@
+use crate::errors::Code;
 use poem::{http::StatusCode, IntoResponse, Response, ResponseBuilder};
 use serde::Serialize;
-use std::marker::PhantomData;
 use serde_with::skip_serializing_none;
+use std::marker::PhantomData;
 
 #[skip_serializing_none]
 #[derive(Serialize)]
@@ -24,7 +25,7 @@ pub struct ReplyBuilder<T> {
 // 只提供 T = () 时的默认值
 impl Default for Reply {
     fn default() -> Self {
-        Self::builder().code(0).finish()
+        Self::builder().finish()
     }
 }
 
@@ -38,7 +39,7 @@ impl<T> Reply<T> {
     pub fn builder() -> ReplyBuilder<T> {
         ReplyBuilder {
             body: Body {
-                code: 0,
+                code: Code::OK as u16,
                 msg: None,
                 data: None,
             },
@@ -49,8 +50,8 @@ impl<T> Reply<T> {
 }
 
 impl<T: Send + Serialize> ReplyBuilder<T> {
-    pub fn code(mut self, code: u16) -> Self {
-        self.body.code = code;
+    pub fn code(mut self, code: Code) -> Self {
+        self.body.code = code as u16;
 
         self
     }
@@ -83,7 +84,7 @@ impl<T: Send + Serialize> ReplyBuilder<T> {
                     .content_type("application/json; charset=utf-8")
                     .body(
                         serde_json::to_vec(&Body {
-                            code: 1,
+                            code: Code::FailedToDeserialize as u16,
                             msg: Some(e.to_string()),
                             data: None as Option<T>,
                         })

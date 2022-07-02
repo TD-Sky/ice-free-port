@@ -3,6 +3,7 @@ mod models;
 mod reply;
 mod router;
 mod state;
+mod errors;
 
 use self::router::router;
 use self::state::State;

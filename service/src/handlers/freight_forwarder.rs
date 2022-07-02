@@ -1,6 +1,6 @@
 use entity::{freight_forwarder, prelude::FreightForwarder};
 
-use crate::{reply::Reply, state::State};
+use crate::{errors::Code, reply::Reply, state::State};
 use poem::{
     handler,
     http::StatusCode,
@@ -32,7 +32,7 @@ pub async fn insert(
         Ok(_) => Reply::default(),
 
         Err(_) => Reply::builder()
-            .code(3)
+            .code(Code::CompanyAlreadyExist)
             .msg(company_name)
             .status(StatusCode::CONFLICT)
             .finish(),
@@ -52,7 +52,7 @@ pub async fn update(
         Ok(_) => Reply::default(),
 
         Err(_) => Reply::builder()
-            .code(3)
+            .code(Code::CompanyAlreadyExist)
             .msg(company_name)
             .status(StatusCode::CONFLICT)
             .finish(),

@@ -1,6 +1,6 @@
 use entity::{prelude::Warehouse, warehouse};
 
-use crate::{reply::Reply, state::State};
+use crate::{errors::Code, reply::Reply, state::State};
 use poem::{
     handler,
     http::StatusCode,
@@ -32,7 +32,7 @@ pub async fn insert(
         Ok(_) => Reply::default(),
 
         Err(_) => Reply::builder()
-            .code(2)
+            .code(Code::WarehouseAlreadyExist)
             .msg(house_name)
             .status(StatusCode::CONFLICT)
             .finish(),
@@ -52,7 +52,7 @@ pub async fn update(
         Ok(_) => Reply::default(),
 
         Err(_) => Reply::builder()
-            .code(2)
+            .code(Code::WarehouseAlreadyExist)
             .msg(house_name)
             .status(StatusCode::CONFLICT)
             .finish(),
