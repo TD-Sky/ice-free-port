@@ -1,7 +1,8 @@
-pub mod warehouse;
-pub mod storage;
-pub mod shipping;
 pub mod freight_forwarder;
+pub mod shipping;
+pub mod storage;
+pub mod user;
+pub mod warehouse;
 
 use poem::handler;
 

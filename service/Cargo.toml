@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = [".", "entity"]
+members = [".", "entity", "codec"]
 
 [dependencies]
 # 异步运行时
@@ -25,6 +25,8 @@ thiserror = "1.0"
 rs-snowflake = "*"
 # 数据库实体
 entity = { path = "entity" }
+# JWT 编解码器
+codec = { path = "codec" }
 
 # 数据库ORM
 [dependencies.sea-orm]

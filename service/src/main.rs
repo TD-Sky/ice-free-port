@@ -4,6 +4,7 @@ mod reply;
 mod router;
 mod state;
 mod errors;
+mod middleware;
 
 use self::router::router;
 use self::state::State;

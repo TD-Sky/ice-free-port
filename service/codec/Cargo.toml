@@ -1,0 +1,9 @@
+[package]
+name = "codec"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jwt-simple = "0.10"
+serde = { version = "1", features = ["derive"] }
+lazy_static = "1.4.0"

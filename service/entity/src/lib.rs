@@ -3,6 +3,7 @@
 pub mod prelude;
 
 pub mod freight_forwarder;
+pub mod registry;
 pub mod shipping_item;
 pub mod shipping_order;
 pub mod storage;
