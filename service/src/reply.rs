@@ -1,5 +1,5 @@
 use crate::errors::Code;
-use poem::{http::StatusCode, IntoResponse, Response, ResponseBuilder};
+use poem::{http::StatusCode, web::Json, IntoResponse, Response};
 use serde::Serialize;
 use serde_with::skip_serializing_none;
 use std::marker::PhantomData;
@@ -18,8 +18,8 @@ pub struct Reply<T = ()> {
 }
 
 pub struct ReplyBuilder<T> {
+    status: StatusCode,
     body: Body<T>,
-    response: ResponseBuilder,
 }
 
 // 只提供 T = () 时的默认值
@@ -38,13 +38,13 @@ impl<T: Serialize + Send> IntoResponse for Reply<T> {
 impl<T> Reply<T> {
     pub fn builder() -> ReplyBuilder<T> {
         ReplyBuilder {
+            status: StatusCode::OK,
+
             body: Body {
                 code: Code::OK as u16,
                 msg: None,
                 data: None,
             },
-
-            response: Response::builder().content_type("application/json; charset=utf-8"),
         }
     }
 }
@@ -69,29 +69,14 @@ impl<T: Send + Serialize> ReplyBuilder<T> {
     }
 
     pub fn status(mut self, status: StatusCode) -> Self {
-        self.response = self.response.status(status);
+        self.status = status;
 
         self
     }
 
     pub fn finish(self) -> Reply<T> {
         Reply {
-            response: match serde_json::to_vec(&self.body) {
-                Ok(bs) => self.response.body(bs),
-
-                Err(e) => Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .content_type("application/json; charset=utf-8")
-                    .body(
-                        serde_json::to_vec(&Body {
-                            code: Code::FailedToDeserialize as u16,
-                            msg: Some(e.to_string()),
-                            data: None as Option<T>,
-                        })
-                        .unwrap(),
-                    ),
-            },
-
+            response: (self.status, Json(self.body)).into_response(),
             marker: PhantomData,
         }
     }
